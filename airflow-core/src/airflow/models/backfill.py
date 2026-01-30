@@ -30,6 +30,7 @@ from enum import Enum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    JSON,
     Boolean,
     ForeignKeyConstraint,
     Integer,
@@ -41,12 +42,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Mapped, relationship, validates
-from sqlalchemy_jsonfield import JSONField
 
 from airflow._shared.timezones import timezone
 from airflow.exceptions import AirflowException, DagNotFound
 from airflow.models.base import Base, StringID
-from airflow.settings import json
 from airflow.utils.session import create_session
 from airflow.utils.sqlalchemy import UtcDateTime, mapped_column, nulls_first, with_row_locks
 from airflow.utils.state import DagRunState
@@ -134,7 +133,7 @@ class Backfill(Base):
     dag_id: Mapped[str] = mapped_column(StringID(), nullable=False)
     from_date: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False)
     to_date: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False)
-    dag_run_conf: Mapped[dict] = mapped_column(JSONField(json=json), nullable=False, default={})
+    dag_run_conf: Mapped[dict] = mapped_column(JSON(), nullable=False, default={})
     is_paused: Mapped[bool | None] = mapped_column(Boolean, default=False, nullable=True)
     """
     Controls whether new dag runs will be created for this backfill.

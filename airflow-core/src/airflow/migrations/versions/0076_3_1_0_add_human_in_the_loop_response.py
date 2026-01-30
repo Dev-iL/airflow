@@ -27,13 +27,11 @@ Create Date: 2025-07-04 15:05:19.459197
 
 from __future__ import annotations
 
-import sqlalchemy_jsonfield
 from alembic import op
-from sqlalchemy import Boolean, Column, ForeignKeyConstraint, String, Text
+from sqlalchemy import JSON, Boolean, Column, ForeignKeyConstraint, String, Text
 from sqlalchemy.dialects import postgresql
 
 from airflow._shared.timezones import timezone
-from airflow.settings import json
 from airflow.utils.sqlalchemy import UtcDateTime
 
 # revision identifiers, used by Alembic.
@@ -54,18 +52,18 @@ def upgrade():
             primary_key=True,
             nullable=False,
         ),
-        Column("options", sqlalchemy_jsonfield.JSONField(json=json), nullable=False),
+        Column("options", JSON(), nullable=False),
         Column("subject", Text, nullable=False),
         Column("body", Text, nullable=True),
-        Column("defaults", sqlalchemy_jsonfield.JSONField(json=json), nullable=True),
+        Column("defaults", JSON(), nullable=True),
         Column("multiple", Boolean, unique=False, default=False),
-        Column("params", sqlalchemy_jsonfield.JSONField(json=json), nullable=False, default={}),
-        Column("assignees", sqlalchemy_jsonfield.JSONField(json=json), nullable=True),
+        Column("params", JSON(), nullable=False, default={}),
+        Column("assignees", JSON(), nullable=True),
         Column("created_at", UtcDateTime(timezone=True), nullable=False, default=timezone.utcnow),
         Column("responded_at", UtcDateTime, nullable=True),
-        Column("responded_by", sqlalchemy_jsonfield.JSONField(json=json), nullable=True),
-        Column("chosen_options", sqlalchemy_jsonfield.JSONField(json=json), nullable=True),
-        Column("params_input", sqlalchemy_jsonfield.JSONField(json=json), nullable=False, default={}),
+        Column("responded_by", JSON(), nullable=True),
+        Column("chosen_options", JSON(), nullable=True),
+        Column("params_input", JSON(), nullable=False, default={}),
         ForeignKeyConstraint(
             ["ti_id"],
             ["task_instance.id"],

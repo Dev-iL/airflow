@@ -20,10 +20,9 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 import uuid6
-from sqlalchemy import JSON, Float, ForeignKey, String, Text, select
+from sqlalchemy import JSON, UUID, Float, ForeignKey, String, Text, select
 from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import Mapped
-from sqlalchemy_utils import UUIDType
 
 from airflow._shared.timezones import timezone
 from airflow.models import Base
@@ -40,11 +39,11 @@ class DeadlineAlert(Base):
 
     __tablename__ = "deadline_alert"
 
-    id: Mapped[str] = mapped_column(UUIDType(binary=False), primary_key=True, default=uuid6.uuid7)
+    id: Mapped[str] = mapped_column(UUID(), primary_key=True, default=uuid6.uuid7)
     created_at: Mapped[datetime] = mapped_column(UtcDateTime, nullable=False, default=timezone.utcnow)
 
     serialized_dag_id: Mapped[str] = mapped_column(
-        UUIDType(binary=False), ForeignKey("serialized_dag.id", ondelete="CASCADE"), nullable=False
+        UUID(), ForeignKey("serialized_dag.id", ondelete="CASCADE"), nullable=False
     )
 
     name: Mapped[str | None] = mapped_column(String(250), nullable=True)

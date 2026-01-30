@@ -34,6 +34,7 @@ import dill
 import uuid6
 from sqlalchemy import (
     JSON,
+    UUID,
     Float,
     ForeignKey,
     ForeignKeyConstraint,
@@ -62,7 +63,6 @@ from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import Mapped, lazyload, reconstructor, relationship
 from sqlalchemy.orm.attributes import NO_VALUE, set_committed_value
-from sqlalchemy_utils import UUIDType
 
 from airflow import settings
 from airflow._shared.observability.metrics.dual_stats_manager import DualStatsManager
@@ -441,7 +441,7 @@ class TaskInstance(Base, LoggingMixin):
         "task_display_name", String(2000), nullable=True
     )
     dag_version_id: Mapped[str | uuid.UUID | None] = mapped_column(
-        UUIDType(binary=False),
+        UUID(),
         ForeignKey("dag_version.id", ondelete="RESTRICT"),
         nullable=True,
     )
@@ -510,7 +510,7 @@ class TaskInstance(Base, LoggingMixin):
     def __init__(
         self,
         task: Operator,
-        dag_version_id: UUIDType | uuid.UUID,
+        dag_version_id: UUID | uuid.UUID,
         run_id: str | None = None,
         state: str | None = None,
         map_index: int = -1,
@@ -553,7 +553,7 @@ class TaskInstance(Base, LoggingMixin):
 
     @staticmethod
     def insert_mapping(
-        run_id: str, task: Operator, map_index: int, dag_version_id: UUIDType
+        run_id: str, task: Operator, map_index: int, dag_version_id: UUID
     ) -> dict[str, Any]:
         """
         Insert mapping.

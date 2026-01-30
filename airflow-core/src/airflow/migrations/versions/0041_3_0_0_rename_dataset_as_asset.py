@@ -29,12 +29,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import sqlalchemy as sa
-import sqlalchemy_jsonfield
 from alembic import op
-from sqlalchemy import text
 
 from airflow.migrations.utils import mysql_drop_foreignkey_if_exists
-from airflow.settings import json
 
 # revision identifiers, used by Alembic.
 revision = "05234396c6fc"
@@ -107,13 +104,13 @@ def _drop_fkey_if_exists(table, constraint_name):
 
     if dialect_name == "sqlite":
         # SQLite requires foreign key constraints to be disabled during batch operations
-        conn.execute(text("PRAGMA foreign_keys=OFF"))
+        conn.execute(sa.text("PRAGMA foreign_keys=OFF"))
         try:
             with op.batch_alter_table(table, schema=None) as batch_op:
                 batch_op.drop_constraint(op.f(constraint_name), type_="foreignkey")
         except ValueError:
             pass
-        conn.execute(text("PRAGMA foreign_keys=ON"))
+        conn.execute(sa.text("PRAGMA foreign_keys=ON"))
     elif dialect_name == "mysql":
         mysql_drop_foreignkey_if_exists(constraint_name, table, op)
     else:
@@ -454,7 +451,7 @@ def upgrade():
         batch_op.alter_column(
             "dataset_expression",
             new_column_name="asset_expression",
-            type_=sqlalchemy_jsonfield.JSONField(json=json),
+            type_=sa.JSON(),
         )
 
 
@@ -756,5 +753,5 @@ def downgrade():
         batch_op.alter_column(
             "asset_expression",
             new_column_name="dataset_expression",
-            type_=sqlalchemy_jsonfield.JSONField(json=json),
+            type_=sa.JSON(),
         )

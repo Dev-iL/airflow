@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import sqlalchemy as sa
 from alembic import op
-from sqlalchemy_utils import UUIDType
 
 # revision identifiers, used by Alembic.
 revision = "29ce7909c52b"
@@ -39,23 +38,15 @@ depends_on = None
 airflow_version = "3.0.0"
 
 
-def _get_uuid_type(dialect_name: str) -> sa.types.TypeEngine:
-    if dialect_name != "postgres":
-        return sa.String(36)
-    return UUIDType(binary=False)
-
-
 def upgrade():
     """Apply Change TI table to have unique UUID id/pk per attempt."""
-    conn = op.get_bind()
-    dialect_name = conn.dialect.name
     with op.batch_alter_table("task_instance_history", schema=None) as batch_op:
         batch_op.create_index("idx_tih_dag_run", ["dag_id", "run_id"], unique=False)
         batch_op.drop_column("task_instance_id")
         batch_op.alter_column(
             "try_id",
             new_column_name="task_instance_id",
-            existing_type=_get_uuid_type(dialect_name),
+            existing_type=sa.types.UUID(),
             existing_nullable=False,
         )
 
@@ -92,8 +83,6 @@ def upgrade():
 
 def downgrade():
     """Unapply Change TI table to have unique UUID id/pk per attempt."""
-    conn = op.get_bind()
-    dialect_name = conn.dialect.name
     with op.batch_alter_table("task_reschedule", schema=None) as batch_op:
         batch_op.add_column(
             sa.Column("try_number", sa.INTEGER(), autoincrement=False, nullable=False, server_default="1")
@@ -109,7 +98,7 @@ def downgrade():
         batch_op.alter_column(
             "task_instance_id",
             new_column_name="try_id",
-            existing_type=_get_uuid_type(dialect_name),
+            existing_type=sa.types.UUID(),
             existing_nullable=False,
         )
         batch_op.drop_index("idx_tih_dag_run")
@@ -117,5 +106,5 @@ def downgrade():
     # (and on non sqlite batching isn't "a thing", it issue alter tables fine)
     with op.batch_alter_table("task_instance_history", schema=None) as batch_op:
         batch_op.add_column(
-            sa.Column("task_instance_id", UUIDType(binary=False), autoincrement=False, nullable=True)
+            sa.Column("task_instance_id", sa.types.UUID(), autoincrement=False, nullable=True)
         )

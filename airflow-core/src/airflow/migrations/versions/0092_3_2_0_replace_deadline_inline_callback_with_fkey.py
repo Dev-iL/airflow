@@ -32,9 +32,6 @@ from textwrap import dedent
 
 import sqlalchemy as sa
 from alembic import context, op
-from sqlalchemy import column, select, table
-from sqlalchemy_jsonfield import JSONField
-from sqlalchemy_utils import UUIDType
 
 from airflow.serialization.serde import deserialize
 from airflow.utils.sqlalchemy import ExtendedJSON, UtcDateTime
@@ -124,32 +121,32 @@ def upgrade():
             op.execute("DELETE FROM deadline")
             return
 
-        deadline_table = table(
+        deadline_table = sa.table(
             "deadline",
-            column("id", UUIDType(binary=False)),
-            column("dagrun_id", sa.Integer()),
-            column("deadline_time", UtcDateTime(timezone=True)),
-            column("callback", JSONField()),
-            column("callback_state", sa.String(20)),
-            column("missed", sa.Boolean()),
-            column("callback_id", UUIDType(binary=False)),
+            sa.column("id", sa.UUID()),
+            sa.column("dagrun_id", sa.Integer()),
+            sa.column("deadline_time", UtcDateTime(timezone=True)),
+            sa.column("callback", sa.JSON()),
+            sa.column("callback_state", sa.String(20)),
+            sa.column("missed", sa.Boolean()),
+            sa.column("callback_id", sa.types.UUID()),
         )
 
-        dag_run_table = table(
+        dag_run_table = sa.table(
             "dag_run",
-            column("id", sa.Integer()),
-            column("dag_id", StringID()),
+            sa.column("id", sa.Integer()),
+            sa.column("dag_id", StringID()),
         )
 
-        callback_table = table(
+        callback_table = sa.table(
             "callback",
-            column("id", UUIDType(binary=False)),
-            column("type", sa.String(20)),
-            column("fetch_method", sa.String(20)),
-            column("data", ExtendedJSON()),
-            column("state", sa.String(10)),
-            column("priority_weight", sa.Integer()),
-            column("created_at", UtcDateTime(timezone=True)),
+            sa.column("id", sa.types.UUID()),
+            sa.column("type", sa.String(20)),
+            sa.column("fetch_method", sa.String(20)),
+            sa.column("data", ExtendedJSON()),
+            sa.column("state", sa.String(10)),
+            sa.column("priority_weight", sa.Integer()),
+            sa.column("created_at", UtcDateTime(timezone=True)),
         )
 
         conn = op.get_bind()
@@ -157,7 +154,7 @@ def upgrade():
         while True:
             batch_num += 1
             batch = conn.execute(
-                select(
+                sa.select(
                     deadline_table.c.id,
                     deadline_table.c.dagrun_id,
                     deadline_table.c.deadline_time,
@@ -179,14 +176,14 @@ def upgrade():
     # Add new columns (temporarily nullable until data has been migrated)
     with op.batch_alter_table("deadline") as batch_op:
         batch_op.add_column(sa.Column("missed", sa.Boolean(), nullable=True))
-        batch_op.add_column(sa.Column("callback_id", UUIDType(binary=False), nullable=True))
+        batch_op.add_column(sa.Column("callback_id", sa.types.UUID(), nullable=True))
 
     migrate_all_data()
 
     with op.batch_alter_table("deadline") as batch_op:
         # Data for `missed` and `callback_id` has been migrated so make them non-nullable
         batch_op.alter_column("missed", existing_type=sa.Boolean(), nullable=False)
-        batch_op.alter_column("callback_id", existing_type=UUIDType(binary=False), nullable=False)
+        batch_op.alter_column("callback_id", existing_type=sa.types.UUID(), nullable=False)
 
         batch_op.create_index("deadline_missed_deadline_time_idx", ["missed", "deadline_time"], unique=False)
         batch_op.drop_index(batch_op.f("deadline_callback_state_time_idx"))
@@ -273,20 +270,20 @@ def downgrade():
             op.execute("DELETE FROM deadline")
             return
 
-        deadline_table = table(
+        deadline_table = sa.table(
             "deadline",
-            column("id", UUIDType(binary=False)),
-            column("callback_id", UUIDType(binary=False)),
-            column("callback", JSONField()),
-            column("callback_state", sa.String(20)),
-            column("trigger_id", sa.Integer()),
+            sa.column("id", sa.UUID()),
+            sa.column("callback_id", sa.UUID()),
+            sa.column("callback", sa.JSON()),
+            sa.column("callback_state", sa.String(20)),
+            sa.column("trigger_id", sa.Integer()),
         )
 
-        callback_table = table(
+        callback_table = sa.table(
             "callback",
-            column("id", UUIDType(binary=False)),
-            column("data", ExtendedJSON()),
-            column("state", sa.String(10)),
+            sa.column("id", sa.UUID()),
+            sa.column("data", ExtendedJSON()),
+            sa.column("state", sa.String(10)),
         )
 
         conn = op.get_bind()
@@ -295,7 +292,7 @@ def downgrade():
         while True:
             batch_num += 1
             batch = conn.execute(
-                select(
+                sa.select(
                     deadline_table.c.id.label("deadline_id"),
                     deadline_table.c.callback_id,
                     callback_table.c.data.label("callback_data"),
@@ -317,17 +314,16 @@ def downgrade():
         batch_op.add_column(sa.Column("trigger_id", sa.INTEGER(), autoincrement=False, nullable=True))
 
         # Temporarily nullable until data has been migrated
-        batch_op.add_column(sa.Column("callback", JSONField(), nullable=True))
+        batch_op.add_column(sa.Column("callback", sa.JSON(), nullable=True))
 
         # Make callback_id nullable so the associated callbacks can be cleared during migration
-        batch_op.alter_column("callback_id", existing_type=UUIDType(binary=False), nullable=True)
+        batch_op.alter_column("callback_id", existing_type=sa.types.UUID(), nullable=True)
 
     migrate_all_data()
 
     with op.batch_alter_table("deadline") as batch_op:
         # Data for `callback` has been migrated so make it non-nullable
-        batch_op.alter_column("callback", existing_type=JSONField(), nullable=False)
-
+        batch_op.alter_column("callback", existing_type=sa.JSON(), nullable=False)
         batch_op.drop_constraint(batch_op.f("deadline_callback_id_fkey"), type_="foreignkey")
         batch_op.create_foreign_key(batch_op.f("deadline_trigger_id_fkey"), "trigger", ["trigger_id"], ["id"])
         batch_op.drop_index("deadline_missed_deadline_time_idx")

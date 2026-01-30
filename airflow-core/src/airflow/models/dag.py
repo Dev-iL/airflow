@@ -23,10 +23,10 @@ from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 
 import pendulum
-import sqlalchemy_jsonfield
 import structlog
 from dateutil.relativedelta import relativedelta
 from sqlalchemy import (
+    JSON,
     Boolean,
     Float,
     ForeignKey,
@@ -58,7 +58,6 @@ from airflow.models.team import Team
 from airflow.serialization.definitions.assets import SerializedAssetUniqueKey
 from airflow.serialization.encoders import DAT, encode_deadline_alert
 from airflow.serialization.enums import Encoding
-from airflow.settings import json
 from airflow.timetables.base import DataInterval, Timetable
 from airflow.timetables.interval import CronDataIntervalTimetable, DeltaDataIntervalTimetable
 from airflow.timetables.simple import AssetTriggeredTimetable, NullTimetable, OnceTimetable
@@ -378,13 +377,9 @@ class DagModel(Base):
     # Timetable Type
     timetable_type: Mapped[str] = mapped_column(String(255), nullable=False, default="")
     # Asset expression based on asset triggers
-    asset_expression: Mapped[dict[str, Any] | None] = mapped_column(
-        sqlalchemy_jsonfield.JSONField(json=json), nullable=True
-    )
+    asset_expression: Mapped[dict[str, Any] | None] = mapped_column(JSON(), nullable=True)
     # DAG deadline information
-    _deadline: Mapped[dict[str, Any] | None] = mapped_column(
-        "deadline", sqlalchemy_jsonfield.JSONField(json=json), nullable=True
-    )
+    _deadline: Mapped[dict[str, Any] | None] = mapped_column("deadline", JSON(), nullable=True)
     # Tags for view filter
     tags = relationship("DagTag", cascade="all, delete, delete-orphan", backref=backref("dag"))
     # Dag owner links for DAGs view

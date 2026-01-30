@@ -23,6 +23,7 @@ from typing import TYPE_CHECKING
 import dill
 from sqlalchemy import (
     JSON,
+    UUID,
     DateTime,
     Float,
     ForeignKeyConstraint,
@@ -36,7 +37,6 @@ from sqlalchemy import (
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.orm import Mapped, relationship
-from sqlalchemy_utils import UUIDType
 
 from airflow._shared.timezones import timezone
 from airflow.models.base import Base, StringID
@@ -114,7 +114,7 @@ class TaskInstanceHistory(Base):
     )
 
     task_display_name: Mapped[str | None] = mapped_column(String(2000), nullable=True)
-    dag_version_id: Mapped[str | None] = mapped_column(UUIDType(binary=False), nullable=True)
+    dag_version_id: Mapped[str | None] = mapped_column(UUID(), nullable=True)
 
     dag_version = relationship(
         "DagVersion",
