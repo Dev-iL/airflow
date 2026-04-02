@@ -2645,7 +2645,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiobotocore", marker = "extra == 'aiobotocore'", specifier = ">=2.26.0" },
+    { name = "aiobotocore", marker = "extra == 'aiobotocore'", specifier = ">=3.0.0" },
     { name = "apache-airflow", editable = "." },
     { name = "apache-airflow-providers-apache-hive", marker = "extra == 'apache-hive'", editable = "providers/apache/hive" },
     { name = "apache-airflow-providers-cncf-kubernetes", marker = "extra == 'cncf-kubernetes'", editable = "providers/cncf/kubernetes" },
