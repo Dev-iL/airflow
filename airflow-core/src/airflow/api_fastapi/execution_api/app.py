@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from contextlib import AsyncExitStack
 from functools import cached_property
@@ -261,6 +262,16 @@ def create_task_execution_api_app() -> FastAPI:
     app.add_middleware(JWTReissueMiddleware)
 
     app.generate_and_include_versioned_routers(execution_api_router)
+
+    # Debug-only synthetic A/B bench routes for the async-session POC. Gated by
+    # an exact-string check (no .lower(), no truthy-set membership): ambiguity
+    # around what counts as "enabled" is itself a scope/security risk for a
+    # route family that bypasses normal auth. The dunder /__bench prefix and
+    # the leading underscore on the module name signal "debug, not production".
+    if os.environ.get("AIRFLOW__BENCHMARK__ENABLE_ASYNC_SESSION_ROUTES") == "true":
+        from airflow.api_fastapi.execution_api.routes import _benchmark
+
+        app.include_router(_benchmark.router, prefix="/__bench", tags=["Benchmark"])
 
     # As we are mounted as a sub app, we don't get any logs for unhandled exceptions without this!
     @app.exception_handler(Exception)
