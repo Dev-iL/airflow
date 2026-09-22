@@ -20,8 +20,9 @@
 # documentation for more details.
 from __future__ import annotations
 
-from collections.abc import Callable, Collection, Container, Iterable, Mapping
+from collections.abc import Callable, Collection, Container, Iterable, Mapping, Sequence
 from datetime import timedelta
+from types import ModuleType
 from typing import Any, Literal, TypeVar, overload
 
 from docker.types import Mount
@@ -48,6 +49,24 @@ __all__ = [
 _T = TypeVar("_T", bound=Task[..., Any] | _TaskDecorator[..., Any, Any])
 
 class TaskDecoratorCollection:
+    def hamilton(
+        self,
+        python_callable: Callable | None = None,
+        *,
+        modules: Sequence[str | ModuleType],
+        final_vars: Sequence[str],
+        config: dict[str, Any] | str | None = None,
+        inputs: dict[str, Any] | str | None = None,
+        overrides: dict[str, Any] | str | None = None,
+        adapters: Sequence[Any] | None = None,
+        materializers: Sequence[Any] | None = None,
+        allow_module_overrides: bool = False,
+        result_handler: Callable[[Any], Any] | None = None,
+        multiple_outputs: bool = False,
+        **kwargs: Any,
+    ) -> TaskDecorator:
+        """Prepare inputs and execute a Hamilton graph within an Airflow task."""
+
     @overload
     def python(  # type: ignore[misc]
         self,

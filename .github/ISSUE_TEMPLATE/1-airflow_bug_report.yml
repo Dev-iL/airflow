@@ -122,6 +122,7 @@ body:
         - apache-drill
         - apache-druid
         - apache-flink
+        - apache-hamilton
         - apache-hdfs
         - apache-hive
         - apache-iceberg
